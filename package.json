@@ -3,8 +3,14 @@
   "version": "1.0.0",
   "description": "A simple CAP project.",
   "dependencies": {
+    "@cap-js-community/odata-v2-adapter": "^1.15.7",
     "@cap-js/hana": "^2",
+    "@sap-cloud-sdk/connectivity": "^4.2.0",
+    "@sap-cloud-sdk/http-client": "^4.2.0",
+    "@sap-cloud-sdk/resilience": "^4.2.0",
     "@sap/cds": "^9",
+    "axios": "^1.13.2",
+    "dotenv": "^17.2.3",
     "express": "^4"
   },
   "devDependencies": {
@@ -45,6 +51,32 @@
       "[production]": {
         "db": {
           "kind": "hana"
+        }
+      },
+      "Northwind": {
+        "kind": "odata",
+        "credentials": {
+          "url": "https://services.odata.org/V4/Northwind/Northwind.svc"
+        }
+      },
+      "V2Service": {
+        "kind": "odata",
+        "credentials": {
+          "url": "https://services.odata.org/V2/Northwind/Northwind.svc"
+        }
+      },
+      "SAP_ODATA": {
+        "kind": "odata",
+        "model": "srv/external/sap"
+      },
+        "PackagingBP": {
+        "kind": "odata",
+          "credentials": {
+          "url": "https://sandbox.api.sap.com/PackagingAgreementsCollaboration/odata/v4/MasterDataService",
+          "headers": {
+            "APIKey": "3zGlptM51tmWOdibLsTjO2Fg1K7iVBwZ",
+            "Accept": "application/json"
+          }
         }
       }
     }

@@ -1,6 +1,6 @@
 using { po.ust as ust } from '../db/schema';
 
-@path : '/md'
+@path : '/master'
 //  @(odata.draft.enabled: true)
 service MasterDataService {
 

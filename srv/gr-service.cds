@@ -1,6 +1,6 @@
 using { po.ust as ust } from '../db/schema';
 
-@path : '/gr'
+@path : '/goodreciept'
 service GRService {
 
   @Common.Label : 'Goods Receipt Header'

@@ -5,7 +5,8 @@ namespace po.ust;
 using { managed, cuid } from '@sap/cds/common';
 
 // Aspects
-aspect primary : managed {}
+// aspect primary : managed {}
+aspect primary : managed, cuid {}
 aspect secondary : managed, cuid {}
 
 // ============================================
@@ -55,6 +56,7 @@ type approved_aspect {
 }
 
 type quantity {
+  @assert.range : [ 1, 9999999 ]
   order_quan : Integer default 0;
 }
 
@@ -72,6 +74,11 @@ type audit_aspect {
   verifiedat : DateTime;
   approvedby : String(30);
   approvedat : DateTime;
+}
+
+type active_status : String enum {
+  active;
+  inactive;
 }
 
 // Enum value for status
@@ -146,8 +153,9 @@ entity vendormaster : primary {
 
   @title : 'Active Status'
   @Common.Label : 'Active Status'
-  @assert.range : [ 'active', 'inactive' ]
-  is_Active : String(8) not null default 'inactive';
+  // @assert.range : [ 'active', 'inactive' ]
+  // is_Active : String(8) not null default 'inactive';
+  is_Active : active_status default #inactive;
 
   // Associations and Compositions
   to_invoice  : Composition of many inv_header on to_invoice.inv_header_vendor_id = $self.vm_id;
@@ -183,7 +191,7 @@ entity mastermaterial : primary {
   @title : 'Standard Price'
   @Common.Label : 'Standard Price'
   @assert.range : [ 0, 9999999 ]
-  mm_stdprice : Integer;
+  mm_stdprice : Decimal(15,2);
 
   @title : 'Unit of Measure'
   @Common.Label : 'Unit of Measure'
@@ -196,8 +204,10 @@ entity mastermaterial : primary {
 
   @title : 'Active Status'
   @Common.Label : 'Active Status'
-  @assert.range : [ 'active', 'inactive' ]
-  is_Active : String(8) not null default 'inactive';
+  // @assert.range : [ 'active', 'inactive' ]
+  // is_Active : String(8) not null default 'inactive';
+  is_Active : active_status default #inactive;
+
 
   // Composition
   to_poitem : Composition of many poitem on to_poitem.po_item_material_id = $self.mm_id;
@@ -258,7 +268,7 @@ entity poheader : primary {
   @title : 'Total Value'
   @Common.Label : 'Total Value'
   @readonly
-  po_total_value : Integer default 0;
+  po_total_value : Decimal(15,2) default 0;
 
   @title : 'Status'
   @Common.Label : 'Status'
@@ -310,8 +320,9 @@ entity poitem : primary {
   @title : 'Quantity'
   @Common.Label : 'Quantity'
   @mandatory
-  @assert.range : [ 1, 9999999 ]
+  // @assert.range : [ 1, 9999999 ]
   po_item_quan : quantity;
+
 
   @title : 'Unit of Measure'
   @Common.Label : 'Unit of Measure'
@@ -321,7 +332,7 @@ entity poitem : primary {
   @Common.Label : 'Net Price'
   @mandatory
   @assert.range : [ 0, 9999999 ]
-  po_item_netprice : Integer;
+  po_item_netprice : Decimal(15,2);
 
   @title : 'Discount'
   @Common.Label : 'Discount'
@@ -336,11 +347,11 @@ entity poitem : primary {
   @title : 'Net Price Value'
   @Common.Label : 'Net Price Value'
   @readonly
-  po_item_netprice_value : Integer;
+  po_item_netprice_value : Decimal(15,2);
 
   @title : 'Net Price Value 2'
   @Common.Label : 'Net Price Value 2'
-  po_item_netprice_value2 : Integer default 0;
+  po_item_netprice_value2 : Decimal(15,2) default 0;
 
   @title : 'Received Quantity'
   @Common.Label : 'Received Quantity'
@@ -360,13 +371,28 @@ entity poitem : primary {
   to_materialmaster : Association to one mastermaterial on to_materialmaster.mm_id = $self.po_item_material_id;
   to_poheader       : Association to one poheader       on to_poheader.po_id       = $self.po_id;
 
-  to_gr_items : Composition of many gr_item
-    on  to_gr_items.gr_item_poitem_id = $self.po_item_material_id
-    and to_gr_items.gr_item_po_id     = $self.po_id;
+  // to_gr_items : Composition of many gr_item
+  //   on  to_gr_items.gr_item_poitem_id = $self.po_item_material_id
+  //   and to_gr_items.gr_item_po_id     = $self.po_id;
 
-  to_invoice_items : Composition of many inv_item
-    on  to_invoice_items.inv_item_po_id     = $self.po_id
-    and to_invoice_items.inv_item_lineitem  = $self.po_lineitem_number;
+  // to_invoice_items : Composition of many inv_item
+  //   on  to_invoice_items.inv_item_po_id     = $self.po_id
+  //   and to_invoice_items.inv_item_lineitem  = $self.po_lineitem_number;
+
+  to_gr_items : Association to many gr_item
+  on  to_gr_items.gr_item_po_id     = $self.po_id
+  // and to_gr_items.gr_item_poitem_id = $self.po_item_material_id;
+  
+  // and to_gr_items.gr_item_lineitem_number = $self.po_item_material_id; //Critical Bug
+  and to_gr_items.gr_item_lineitem_number = $self.po_lineitem_number;
+
+  
+  to_invoice_items : Association to many inv_item
+  on  to_invoice_items.inv_item_po_id    = $self.po_id
+  and to_invoice_items.inv_item_lineitem = $self.po_lineitem_number;
+
+
+
 }
 
 // ============================================
@@ -440,7 +466,8 @@ entity gr_item : managed {
   @title : 'PO Item Material ID'
   @Common.Label : 'PO Item Material ID'
   @mandatory
-  gr_item_poitem_id : UUID not null;
+  // gr_item_poitem_id : UUID not null;
+  gr_item_lineitem_number : Integer not null;
 
   @title : 'Received Quantity'
   @Common.Label : 'Received Quantity'
@@ -461,9 +488,14 @@ entity gr_item : managed {
   gr_item_remarks : String(255);
 
   // Associations
+  // to_po_items : Association to one poitem
+  //   on  to_po_items.po_id              = $self.gr_item_po_id
+  //   and to_po_items.po_item_material_id = $self.gr_item_poitem_id;
+
   to_po_items : Association to one poitem
-    on  to_po_items.po_id              = $self.gr_item_po_id
-    and to_po_items.po_item_material_id = $self.gr_item_poitem_id;
+  on  to_po_items.po_id               = $self.gr_item_po_id
+  and to_po_items.po_lineitem_number  = $self.gr_item_lineitem_number;
+
 
   to_gr_header : Association to one gr_header on to_gr_header.gr_id = $self.gr_item_ref_id;
 }
@@ -518,7 +550,7 @@ entity inv_header : primary {
   @title : 'Total Amount Before Tax'
   @Common.Label : 'Total Amount Before Tax'
   @readonly
-  inv_header_totalamt_before : Integer default 0;
+  inv_header_totalamt_before : Decimal(15,2) default 0;
 
   @title : 'Status'
   @Common.Label : 'Status'
@@ -527,12 +559,12 @@ entity inv_header : primary {
   @title : 'Tax Amount'
   @Common.Label : 'Tax Amount'
   @readonly
-  inv_header_taxamt : Integer default 0;
+  inv_header_taxamt : Decimal(15,2) default 0;
 
   @title : 'Total Amount'
   @Common.Label : 'Total Amount'
   @readonly
-  inv_header_total_amount : Integer default 0;
+  inv_header_total_amount : Decimal(15,2) default 0;
 
   @title : 'Reason for Rejection'
   @Common.Label : 'Reason for Rejection'
@@ -581,7 +613,7 @@ entity inv_item : primary {
   @title : 'Invoice Quantity'
   @Common.Label : 'Invoice Quantity'
   @mandatory
-  @assert.range : [ 1, 9999999 ]
+  // @assert.range : [ 1, 9999999 ]
   inv_item_quaninv : quantity;
 
   @title : 'Unit of Measure'
@@ -590,7 +622,7 @@ entity inv_item : primary {
 
   @title : 'Net Price'
   @Common.Label : 'Net Price'
-  inv_item_netprice : Integer;
+  inv_item_netprice : Decimal(15,2);
 
   @title : 'Discount'
   @Common.Label : 'Discount'
@@ -603,17 +635,17 @@ entity inv_item : primary {
   @title : 'Net Amount'
   @Common.Label : 'Net Amount'
   @readonly
-  inv_item_netamt : Integer default 0;
+  inv_item_netamt : Decimal(15,2) default 0;
 
   @title : 'Tax Amount'
   @Common.Label : 'Tax Amount'
   @readonly
-  inv_item_taxamt : Integer default 0;
+  inv_item_taxamt : Decimal(15,2) default 0;
 
   @title : 'Total Amount'
   @Common.Label : 'Total Amount'
   @readonly
-  inv_item_totalamt : Integer default 0;
+  inv_item_totalamt : Decimal(15,2) default 0;
 
   // Associations
   to_po_items  : Association to one poitem     on to_po_items.po_id             = $self.inv_item_po_id

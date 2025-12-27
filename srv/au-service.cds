@@ -2,7 +2,7 @@
 
 using { po.ust as ust } from '../db/schema';
 
-@path : '/aud'
+@path : '/audits'
 service AUDService {
 
   @Common.Label : 'PO Audit Log'

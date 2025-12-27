@@ -1,6 +1,6 @@
 using { po.ust as ust } from '../db/schema';
 
-@path : '/po'
+@path : '/purchase'
 service POService  {
 
   @Common.Label : 'Purchase Order Header'

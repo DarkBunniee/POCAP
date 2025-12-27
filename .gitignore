@@ -10,6 +10,7 @@ node_modules/
 target/
 
 app/
+data-past
 
 # Web IDE, App Studio
 .che/
